@@ -44,7 +44,9 @@ func dothat() {
 	wg.Add(1000)
 	go pool(&wg, 1000, 3000)
 	wg.Wait()
-	fmt.Println("\nDuration: ", time.Since(start), "\n")
+	duration := time.Since(start)
+	time.Sleep(time.Duration(100) * time.Millisecond)
+	fmt.Println("Duration: ", duration)
 }
 
 func main() {
