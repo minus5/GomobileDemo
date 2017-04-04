@@ -1,34 +1,34 @@
 package main
 
 import (
-	"sync"
-	"time"
 	"fmt"
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
-	"log"
 	"golang.org/x/mobile/event/touch"
+	"log"
+	"sync"
+	"time"
 )
 
-func worker(id int, tasksCh <-chan int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for {
-		task, ok := <-tasksCh
-		if !ok {
-			return
-		}
-		d := time.Duration(4) * time.Millisecond
-		time.Sleep(d)
+func worker(id int, tasksCh <-chan int) {
+	for task := range tasksCh {
+		time.Sleep(time.Duration(4) * time.Millisecond)
 		fmt.Println("worker", id, "processing task", task)
 	}
 }
 
-func pool(wg *sync.WaitGroup, workers, tasks int) {
+func pool(workers int, tasks int) {
 	tasksCh := make(chan int)
 
+	var wg sync.WaitGroup
+
 	for i := 0; i < workers; i++ {
-		go worker(i, tasksCh, wg)
+		wg.Add(1)
+		go func(workerId int) {
+			worker(workerId, tasksCh)
+			wg.Done()
+		}(i)
 	}
 
 	for i := 0; i < tasks; i++ {
@@ -36,14 +36,12 @@ func pool(wg *sync.WaitGroup, workers, tasks int) {
 	}
 
 	close(tasksCh)
+	wg.Wait()
 }
 
 func dothat() {
 	start := time.Now()
-	var wg sync.WaitGroup
-	wg.Add(1000)
-	go pool(&wg, 1000, 3000)
-	wg.Wait()
+	pool(1000, 3000)
 	duration := time.Since(start)
 	time.Sleep(time.Duration(100) * time.Millisecond)
 	fmt.Println("Duration: ", duration)
@@ -54,7 +52,7 @@ func main() {
 		for e := range a.Events() {
 			switch e := a.Filter(e).(type) {
 			case lifecycle.Event:
-				log.Print("Lifecycle: "+e.String())
+				log.Print("Lifecycle: " + e.String())
 			case paint.Event:
 				log.Print("Call OpenGL here.")
 				a.Publish()

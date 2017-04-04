@@ -55,7 +55,9 @@ public class MainActivity extends AppCompatActivity
 
     public void talkToGo(View view)
     {
-        viewText.setText(Androidlibrary.echo(viewEdit.getText().toString()));
+        final String input = viewEdit.getText().toString();
+        final String output = Androidlibrary.echo(input);
+        viewText.setText(output);
     }
 
     public void doRegister(View view)
